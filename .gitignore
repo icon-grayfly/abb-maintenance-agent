@@ -1,1 +1,6 @@
 venv/
+node_modules/
+.next/
+chroma_db/
+.env
+.DS_Store
