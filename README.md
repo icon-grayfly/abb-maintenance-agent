@@ -41,14 +41,22 @@ DevOps & Infrastructure: Docker, Docker Compose
 Bash
 git clone https://github.com/your-username/abb-maintenance-agent.git
 cd abb-maintenance-agent
-2. Run with Docker Compose (Recommended)
-Launch the entire full-stack application with a single command:
+2. Run the full stack with Docker Compose (Recommended)
+For the production-style containers, launch both services with one command:
 
 Bash
-docker-compose up --build
+docker compose --profile prod up --build
 Frontend UI: http://localhost:3100
 
 Backend API Docs: http://localhost:8000/docs
+
+For live development with frontend and backend hot reload, use the `dev` profile:
+
+```bash
+docker compose --profile dev up --build
+```
+
+Then open http://localhost:3100 in a browser. The frontend and backend run together; edit files locally and refresh to see changes. Stop both services with `Ctrl+C`.
 
 📌 API Endpoints
 POST /ingest - Upload and vectorize technical documentation (.pdf, .docx, .md).

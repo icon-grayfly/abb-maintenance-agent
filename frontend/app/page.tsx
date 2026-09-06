@@ -1,11 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: string[];
+  externalEngines?: string[];
+  externalResults?: ExternalResultItem[];
+  showExternal?: boolean;
+}
+
+interface ExternalResultItem {
+  title: string;
+  snippet: string;
+  url: string;
+  mediaType?: "doc" | "image" | "video";
 }
 
 interface UploadedDocument {
@@ -25,7 +35,25 @@ interface QueryRecord {
   timestamp: string;
 }
 
-// Futuristic Intro Splash using the exact VFX image background
+interface CategorySearchResult {
+  id: string;
+  category: "Tab" | "Document" | "History Query" | "Diagnostic Keyword";
+  title: string;
+  snippet: string;
+  details?: string;
+  targetTab?: "controls" | "history";
+  action: () => void;
+}
+
+const SEARCH_ENGINES = [
+  { id: "google", name: "Google", icon: "🌐" },
+  { id: "openai", name: "OpenAI", icon: "🤖" },
+  { id: "duckduckgo", name: "DuckDuckGo", icon: "🦆" },
+  { id: "gemini", name: "Gemini", icon: "✨" },
+  { id: "wikipedia", name: "Wikipedia", icon: "📚" },
+  { id: "bing", name: "Bing Search", icon: "🔍" },
+];
+
 function IntroSplash({ onEnter }: { onEnter: () => void }) {
   const [fadeOut, setFadeOut] = useState(false);
 
@@ -37,75 +65,52 @@ function IntroSplash({ onEnter }: { onEnter: () => void }) {
     return () => clearTimeout(timer);
   }, [onEnter]);
 
-  return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950 text-white overflow-hidden transition-opacity duration-700 ${
-        fadeOut ? "opacity-0 pointer-events-none" : "opacity-100"
-      }`}
-    >
-      {/* Background Graphic Image Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-opacity opacity-40 scale-105 filter contrast-125 brightness-90 animate-pulse"
-        style={{ backgroundImage: "url('/background.jpg')", animationDuration: '8s' }}
-      />
-      
-      {/* High-Tech VFX Overlay Layers */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-slate-950/80 pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(6,182,212,0.15)_0%,transparent_70%)] pointer-events-none" />
+  const enterDashboard = () => {
+    setFadeOut(true);
+    setTimeout(onEnter, 700);
+  };
 
-      {/* Glassmorphic Central Card Container */}
-      <div className="relative z-10 w-full max-w-4xl mx-4 p-8 sm:p-12 md:p-14 rounded-3xl backdrop-blur-2xl bg-slate-950/60 border border-cyan-500/40 shadow-[0_0_80px_rgba(6,182,212,0.25)] flex flex-col items-center text-center space-y-6">
-        
-        {/* Double Neon Ring Bolt Badge */}
-        <div className="relative flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-cyan-400 bg-slate-900/90 shadow-[0_0_40px_rgba(6,182,212,0.6)]">
-          <div className="absolute inset-0 rounded-full border border-cyan-300/50 animate-ping opacity-75" style={{ animationDuration: '3s' }} />
-          <svg
-            className="w-10 h-10 sm:w-12 sm:h-12 text-cyan-300 drop-shadow-[0_0_15px_#06b6d4]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.2"
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
+  return (
+    <div className={`intro-splash ${fadeOut ? "intro-splash--out" : ""}`}>
+      <div className="intro-splash__grid" />
+      <div className="intro-splash__rings" />
+      <div className="intro-splash__particles" />
+      <div className="intro-splash__vignette" />
+
+      <main className="intro-panel">
+        <div className="intro-panel__bolt" aria-hidden="true">
+          <span>⚡</span>
+        </div>
+        <div className="intro-panel__bracket intro-panel__bracket--left" />
+        <div className="intro-panel__bracket intro-panel__bracket--right" />
+
+        <div className="intro-mark" aria-label="ABB maintenance intelligence">
+          <span className="intro-mark__wave intro-mark__wave--one" />
+          <span className="intro-mark__wave intro-mark__wave--two" />
+          <span className="intro-mark__wave intro-mark__wave--three" />
+          <span className="intro-mark__wave intro-mark__wave--four" />
+          <span className="intro-mark__wave intro-mark__wave--five" />
         </div>
 
-        {/* Title */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_25px_rgba(16,185,129,0.3)]">
-          Industrial Maintenance AI Agent
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-2xl font-light tracking-wide leading-relaxed">
-          ABB Accelerator 2026 — Multimodal Intelligence
-          <br className="hidden sm:inline" /> & Real-Time Compliance Monitoring System
-        </p>
-
-        {/* Enter Dashboard Button */}
-        <div className="pt-2">
-          <button
-            onClick={() => {
-              setFadeOut(true);
-              setTimeout(onEnter, 600);
-            }}
-            className="group relative px-9 py-3.5 rounded-xl border border-cyan-400/80 bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-100 font-medium text-base shadow-[0_0_30px_rgba(6,182,212,0.4)] transition-all duration-300 hover:shadow-[0_0_50px_rgba(6,182,212,0.8)] hover:border-cyan-200 cursor-pointer backdrop-blur-md overflow-hidden"
-          >
-            <span className="absolute inset-0 w-full h-full bg-cyan-400/15 group-hover:translate-x-full transition-transform duration-500 ease-out transform -translate-x-full" />
-            <span className="relative z-10 flex items-center gap-2">
-              Enter Dashboard &rarr;
-            </span>
+        <div className="intro-panel__copy">
+          <p className="intro-kicker">ABB // INDUSTRIAL INTELLIGENCE</p>
+          <h1>Maintenance AI</h1>
+          <p>Multimodal diagnostics for safer, smarter operations.</p>
+          <button className="intro-enter" onClick={enterDashboard}>
+            <span>Initialize system</span>
+            <strong aria-hidden="true">-&gt;</strong>
           </button>
         </div>
 
-        {/* Card Footer Status */}
-        <div className="w-full text-right pt-2 text-xs text-slate-400 font-mono tracking-wider">
-          Status: Secure RAG Vector Pipeline Online
+        <div className="intro-panel__status">
+          <span className="status-dot" />
+          SECURE RAG VECTOR PIPELINE // ONLINE
         </div>
-      </div>
+      </main>
+
+      <div className="intro-corner intro-corner--top">SYS.01 / 2026</div>
+      <div className="intro-corner intro-corner--bottom">ABB ACCELERATOR / THEME 02</div>
+      <button className="intro-skip" onClick={enterDashboard}>Skip intro</button>
     </div>
   );
 }
@@ -115,21 +120,47 @@ export default function MaintenanceAgentDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarTab, setSidebarTab] = useState<"controls" | "history">("controls");
   
+  // 1. Left pane auto-search state & details reveal
+  const [sidebarSearchQuery, setSidebarSearchQuery] = useState("");
+  const [revealedResultId, setRevealedResultId] = useState<string | null>(null);
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [formatFilter, setFormatFilter] = useState<string>("");
   
-  // Multi-file upload states
+  // 2. Multi-select search engines & click-outside auto-close ref
+  const [showSourceDropdown, setShowSourceDropdown] = useState(false);
+  const [selectedSearchEngines, setSelectedSearchEngines] = useState<string[]>([]);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // 3. Sent Query Editing & Copying state
+  const [editingMsgIndex, setEditingMsgIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+  const [copiedMsgIndex, setCopiedMsgIndex] = useState<number | null>(null);
+
+  // Multi-file upload states[cite: 1]
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadStatus, setUploadStatus] = useState("");
   const [temperature, setTemperature] = useState(0.2);
 
-  // Persistent History States
+  // Persistent History States[cite: 1]
   const [uploadedHistory, setUploadedHistory] = useState<UploadedDocument[]>([]);
   const [queryHistory, setQueryHistory] = useState<QueryRecord[]>([]);
+  const [collapsedDates, setCollapsedDates] = useState<Record<string, boolean>>({});
 
-  // Load past history from LocalStorage on mount
+  // Auto-close "+" dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSourceDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Load past history from LocalStorage on mount[cite: 1]
   useEffect(() => {
     const savedDocs = localStorage.getItem("abb_uploaded_docs");
     const savedQueries = localStorage.getItem("abb_query_history");
@@ -141,7 +172,7 @@ export default function MaintenanceAgentDashboard() {
     }
   }, []);
 
-  // Sync uploaded docs to LocalStorage
+  // Sync uploaded docs to LocalStorage[cite: 1]
   const saveUploadedDoc = (doc: UploadedDocument) => {
     setUploadedHistory((prev) => {
       const updated = [doc, ...prev];
@@ -150,7 +181,7 @@ export default function MaintenanceAgentDashboard() {
     });
   };
 
-  // Sync query records to LocalStorage
+  // Sync query records to LocalStorage[cite: 1]
   const saveQueryRecord = (record: QueryRecord) => {
     setQueryHistory((prev) => {
       const updated = [record, ...prev];
@@ -158,6 +189,178 @@ export default function MaintenanceAgentDashboard() {
       return updated;
     });
   };
+
+  // Targeted Deletion Handlers[cite: 1]
+  const deleteUploadedDoc = (id: string) => {
+    setUploadedHistory((prev) => {
+      const updated = prev.filter(doc => doc.id !== id);
+      localStorage.setItem("abb_uploaded_docs", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const deleteQueryRecord = (id: string) => {
+    setQueryHistory((prev) => {
+      const updated = prev.filter(q => q.id !== id);
+      localStorage.setItem("abb_query_history", JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const toggleDateCollapse = (date: string) => {
+    setCollapsedDates((prev) => ({
+      ...prev,
+      [date]: !(prev[date] ?? true),
+    }));
+  };
+
+  const toggleExternalResults = (msgIndex: number) => {
+    setMessages((prev) =>
+      prev.map((msg, idx) =>
+        idx === msgIndex ? { ...msg, showExternal: !msg.showExternal } : msg
+      )
+    );
+  };
+
+  // 1. Unified Multi-Category Auto-Search in Left Pane
+  const PRESET_QUERIES = [
+    "What are the key privacy & consent rules in the policy?",
+    "What is Rosalyn's policy about warranties?",
+    "Rosalyn system architecture and vector indexing",
+    "Safety guidelines and maintenance protocols"
+  ];
+
+  const searchResults: CategorySearchResult[] = [];
+  const queryLower = sidebarSearchQuery.toLowerCase().trim();
+
+  if (queryLower) {
+    // Search Tabs
+    if ("control panel".includes(queryLower) || "controls".includes(queryLower) || "ingest".includes(queryLower)) {
+      searchResults.push({
+        id: "tab-controls",
+        category: "Tab",
+        title: "🛠️ Control Panel Tab",
+        snippet: "Document Ingestion, Metadata Filters, Vector Metrics & Presets",
+        details: "Location: Left Sidebar -> Control Panel. Manage system settings and uploads.",
+        targetTab: "controls",
+        action: () => setSidebarTab("controls")
+      });
+    }
+    if ("history".includes(queryLower) || "timeline".includes(queryLower) || "log".includes(queryLower)) {
+      searchResults.push({
+        id: "tab-history",
+        category: "Tab",
+        title: "📜 History Log Tab",
+        snippet: "Timeline of uploaded files and past user queries",
+        details: "Location: Left Sidebar -> History. Stores full records and logs.",
+        targetTab: "history",
+        action: () => setSidebarTab("history")
+      });
+    }
+
+    // Search Documents
+    uploadedHistory.forEach((doc) => {
+      if (
+        doc.name.toLowerCase().includes(queryLower) ||
+        doc.type.toLowerCase().includes(queryLower) ||
+        doc.timestamp.toLowerCase().includes(queryLower)
+      ) {
+        searchResults.push({
+          id: `doc-${doc.id}`,
+          category: "Document",
+          title: `📁 ${doc.name}`,
+          snippet: `Type: ${doc.type} | Size: ${(doc.size / 1024).toFixed(1)} KB`,
+          details: `Uploaded on: ${doc.timestamp} | Indexed Chunks: ${doc.chunksIndexed || 0}`,
+          targetTab: "history",
+          action: () => setSidebarTab("history")
+        });
+      }
+    });
+
+    // Search Past Queries
+    queryHistory.forEach((q) => {
+      if (
+        q.query.toLowerCase().includes(queryLower) ||
+        q.answer.toLowerCase().includes(queryLower) ||
+        q.timestamp.toLowerCase().includes(queryLower)
+      ) {
+        searchResults.push({
+          id: `query-${q.id}`,
+          category: "History Query",
+          title: `💬 "${q.query}"`,
+          snippet: q.answer.substring(0, 75) + "...",
+          details: `Full Answer: "${q.answer}" | Time: ${q.timestamp}`,
+          targetTab: "history",
+          action: () => {
+            setSidebarTab("history");
+            handleSendMessage(q.query);
+          }
+        });
+      }
+    });
+
+    // Search Diagnostic Keywords & Presets
+    PRESET_QUERIES.forEach((preset, pIdx) => {
+      if (preset.toLowerCase().includes(queryLower)) {
+        searchResults.push({
+          id: `preset-${pIdx}`,
+          category: "Diagnostic Keyword",
+          title: `🔍 "${preset}"`,
+          snippet: "Quick diagnostic query preset",
+          details: "Executes instant vector RAG search against active knowledgebase.",
+          targetTab: "controls",
+          action: () => {
+            setSidebarTab("controls");
+            handleSendMessage(preset);
+          }
+        });
+      }
+    });
+  }
+
+  // Handle Enter Key in Left Pane Search Input
+  const handleLeftPaneSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchResults.length > 0) {
+      e.preventDefault();
+      const topMatch = searchResults[0];
+      topMatch.action();
+    }
+  };
+
+  // Grouped History Log[cite: 1]
+  type HistoryItem = 
+    | { type: "upload"; data: UploadedDocument }
+    | { type: "query"; data: QueryRecord };
+
+  const filteredUploads = uploadedHistory.filter(doc =>
+    doc.name.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
+    doc.type.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
+    doc.timestamp.toLowerCase().includes(sidebarSearchQuery.toLowerCase())
+  );
+
+  const filteredQueries = queryHistory.filter(q =>
+    q.query.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
+    q.answer.toLowerCase().includes(sidebarSearchQuery.toLowerCase()) ||
+    q.timestamp.toLowerCase().includes(sidebarSearchQuery.toLowerCase())
+  );
+
+  const allHistory: HistoryItem[] = [
+    ...filteredUploads.map((doc) => ({ type: "upload" as const, data: doc })),
+    ...filteredQueries.map((q) => ({ type: "query" as const, data: q })),
+  ];
+
+  allHistory.sort((a, b) => {
+    const timeA = parseInt(a.data.id.split("-")[0]);
+    const timeB = parseInt(b.data.id.split("-")[0]);
+    return timeB - timeA; 
+  });
+
+  const groupedHistory = allHistory.reduce((acc, item) => {
+    const datePart = item.data.timestamp.split(",")[0].trim();
+    if (!acc[datePart]) acc[datePart] = [];
+    acc[datePart].push(item);
+    return acc;
+  }, {} as Record<string, HistoryItem[]>);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -191,7 +394,6 @@ export default function MaintenanceAgentDashboard() {
           const chunks = data.total_chunks_indexed || 0;
           totalChunks += chunks;
 
-          // Add to persistent upload history
           saveUploadedDoc({
             id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
             name: file.name,
@@ -218,7 +420,10 @@ export default function MaintenanceAgentDashboard() {
     const queryToSend = userQuery || input;
     if (!queryToSend.trim() || loading) return;
 
+    const activeEngines = [...selectedSearchEngines];
     if (!userQuery) setInput("");
+    setShowSourceDropdown(false);
+    
     setMessages((prev) => [...prev, { role: "user", content: queryToSend }]);
     setLoading(true);
 
@@ -237,16 +442,41 @@ export default function MaintenanceAgentDashboard() {
         const answerText = data.answer;
         const sourceList = data.sources || [];
 
+        // Build multi-engine external search results if engines selected
+        let extResults: ExternalResultItem[] | undefined;
+        if (activeEngines.length > 0) {
+          extResults = activeEngines.flatMap((engineName) => [
+            {
+              title: `${engineName} Search: "${queryToSend}"`,
+              snippet: `Retrieved technical overview, safety protocols, and documentation matched via ${engineName}.`,
+              url: engineName === "Google"
+                ? `https://www.google.com/search?q=${encodeURIComponent(queryToSend)}`
+                : engineName === "Wikipedia"
+                ? `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(queryToSend)}`
+                : `https://duckduckgo.com/?q=${encodeURIComponent(queryToSend)}`,
+              mediaType: "doc" as const,
+            },
+            {
+              title: `${engineName} Visual Diagrams`,
+              snippet: `Schematic drawings and visual maintenance guides matched via ${engineName}.`,
+              url: `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(queryToSend)}`,
+              mediaType: "image" as const,
+            }
+          ]);
+        }
+
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
             content: answerText,
             sources: sourceList,
+            externalEngines: activeEngines.length > 0 ? activeEngines : undefined,
+            externalResults: extResults,
+            showExternal: false,
           },
         ]);
 
-        // Save Query to Persistent History
         saveQueryRecord({
           id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
           query: queryToSend,
@@ -270,6 +500,27 @@ export default function MaintenanceAgentDashboard() {
     }
   };
 
+  // 3. Sent Query Editing & Copy Handlers
+  const handleCopyQuery = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedMsgIndex(idx);
+    setTimeout(() => setCopiedMsgIndex(null), 2000);
+  };
+
+  const handleStartEditQuery = (text: string, idx: number) => {
+    setEditingMsgIndex(idx);
+    setEditText(text);
+  };
+
+  const handleSaveEditQuery = (idx: number) => {
+    if (!editText.trim()) return;
+    const updated = [...messages];
+    updated[idx].content = editText;
+    setMessages(updated);
+    setEditingMsgIndex(null);
+    setEditText("");
+  };
+
   const clearHistory = () => {
     localStorage.removeItem("abb_uploaded_docs");
     localStorage.removeItem("abb_query_history");
@@ -277,19 +528,41 @@ export default function MaintenanceAgentDashboard() {
     setQueryHistory([]);
   };
 
+  // Toggle multi-selection of external search engines
+  const toggleSearchEngine = (engineName: string) => {
+    setSelectedSearchEngines((prev) =>
+      prev.includes(engineName)
+        ? prev.filter((e) => e !== engineName)
+        : [...prev, engineName]
+    );
+  };
+
   return (
     <>
+      {/* Global CSS for Waving Hand VFX Animation[cite: 1] */}
+      <style jsx global>{`
+        @keyframes wave {
+          0% { transform: rotate(0deg); }
+          15% { transform: rotate(14deg); }
+          30% { transform: rotate(-8deg); }
+          45% { transform: rotate(14deg); }
+          60% { transform: rotate(-4deg); }
+          75% { transform: rotate(10deg); }
+          100% { transform: rotate(0deg); }
+        }
+      `}</style>
+
       {showSplash && <IntroSplash onEnter={() => setShowSplash(false)} />}
 
       <main className="flex h-screen bg-slate-900 text-gray-100 font-sans overflow-hidden">
         
-        {/* Collapsible Left Sidebar */}
+        {/* Collapsible Left Sidebar[cite: 1] */}
         <aside
           className={`${
             sidebarOpen ? "w-80" : "w-16"
           } transition-all duration-300 border-r border-slate-800 flex flex-col justify-between bg-slate-950 relative z-20 shrink-0`}
         >
-          {/* Header & Sidebar Toggle */}
+          {/* Header & Sidebar Toggle[cite: 1] */}
           <div className="p-4 border-b border-slate-800/80 flex items-center justify-between">
             {sidebarOpen ? (
               <div>
@@ -311,7 +584,7 @@ export default function MaintenanceAgentDashboard() {
             </button>
           </div>
 
-          {/* Navigation Tab Switcher (Visible when expanded) */}
+          {/* Navigation Tab Switcher[cite: 1] */}
           {sidebarOpen && (
             <div className="flex border-b border-slate-800 text-xs font-semibold">
               <button
@@ -337,13 +610,96 @@ export default function MaintenanceAgentDashboard() {
             </div>
           )}
 
-          {/* Sidebar Body Content */}
+          {/* 1. Left Pane Auto-Search Bar (Tabs, Docs, Words, History) */}
+          {sidebarOpen && (
+            <div className="px-3 py-2 border-b border-slate-800/60 bg-slate-950/40">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={sidebarSearchQuery}
+                  onChange={(e) => setSidebarSearchQuery(e.target.value)}
+                  onKeyDown={handleLeftPaneSearchKeyDown}
+                  placeholder="Auto-search (e.g. Rosalyn, tab, doc)..."
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-lg py-1.5 pl-8 pr-7 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+                />
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs">
+                  🔍
+                </span>
+                {sidebarSearchQuery && (
+                  <button
+                    onClick={() => setSidebarSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Sidebar Body Content / Auto-Search Results View */}
           {sidebarOpen ? (
-            <div className="p-5 flex-1 overflow-y-auto space-y-6">
+            <div className="p-4 flex-1 overflow-y-auto space-y-6">
               
-              {sidebarTab === "controls" ? (
+              {/* Active Left Pane Auto-Search Results Overlay Panel */}
+              {sidebarSearchQuery.trim() !== "" ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                      Search Results ({searchResults.length})
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">Press Enter to select top</span>
+                  </div>
+
+                  {searchResults.length === 0 ? (
+                    <p className="text-xs text-slate-500 text-center py-4">No matching items or tabs found.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {searchResults.map((res) => {
+                        const isRevealed = revealedResultId === res.id;
+                        return (
+                          <div
+                            key={res.id}
+                            onClick={res.action}
+                            className="p-2.5 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 rounded-lg text-xs cursor-pointer transition group"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-slate-200 group-hover:text-cyan-300">
+                                {res.title}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-950 text-cyan-400 border border-cyan-900/40">
+                                {res.category}
+                              </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-400 mt-1">{res.snippet}</p>
+
+                            {/* Click to Reveal Deeper Details */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRevealedResultId(isRevealed ? null : res.id);
+                              }}
+                              className="mt-2 text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-medium"
+                            >
+                              <span>{isRevealed ? "▲ Hide details" : "▼ Click to reveal details"}</span>
+                            </button>
+
+                            {isRevealed && res.details && (
+                              <div className="mt-2 p-2 bg-slate-950 rounded text-[11px] text-slate-300 font-mono border border-slate-800 leading-relaxed">
+                                {res.details}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : sidebarTab === "controls" ? (
                 <>
-                  {/* 1. Multi-file Batch Document Ingestion */}
+                  {/* 1. Multi-file Batch Document Ingestion[cite: 1] */}
                   <div>
                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                       1. Ingest Documents (Multi-Upload)
@@ -379,7 +735,7 @@ export default function MaintenanceAgentDashboard() {
                     {uploadStatus && <p className="text-xs mt-2 text-emerald-400 font-medium">{uploadStatus}</p>}
                   </div>
 
-                  {/* 2. Metadata Filter */}
+                  {/* 2. Metadata Filter[cite: 1] */}
                   <div>
                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                       2. Format Metadata Filter
@@ -397,7 +753,7 @@ export default function MaintenanceAgentDashboard() {
                     </select>
                   </div>
 
-                  {/* 3. Real-Time Vector DB Stats */}
+                  {/* 3. Real-Time Vector DB Stats[cite: 1] */}
                   <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-3.5 space-y-2">
                     <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400">
                       Vector Store Metrics
@@ -416,7 +772,7 @@ export default function MaintenanceAgentDashboard() {
                     </div>
                   </div>
 
-                  {/* 4. Model Control Tuning */}
+                  {/* 4. Model Control Tuning[cite: 1] */}
                   <div>
                     <div className="flex justify-between text-xs text-slate-300 mb-1">
                       <span>Model Temperature:</span>
@@ -433,96 +789,126 @@ export default function MaintenanceAgentDashboard() {
                     />
                   </div>
 
-                  {/* 5. Quick Diagnostic Presets */}
+                  {/* 5. Quick Diagnostic Presets[cite: 1] */}
                   <div>
                     <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
                       Quick Diagnostic Queries
                     </h2>
                     <div className="space-y-1.5">
-                      <button
-                        onClick={() => handleSendMessage("What are the key privacy & consent rules in the policy?")}
-                        className="w-full text-left p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 transition"
-                      >
-                        🔍 Privacy & Consent Rules
-                      </button>
-                      <button
-                        onClick={() => handleSendMessage("What is Rosalyn's policy about warranties?")}
-                        className="w-full text-left p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 transition"
-                      >
-                        ⚙️ Warranty & Liability Disclaimer
-                      </button>
+                      {PRESET_QUERIES.map((preset, pIdx) => (
+                        <button
+                          key={pIdx}
+                          onClick={() => handleSendMessage(preset)}
+                          className="w-full text-left p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-300 transition cursor-pointer"
+                        >
+                          🔍 {preset}
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </>
               ) : (
-                /* HISTORY TAB CONTENT */
+                /* UNIFIED TIMELINE HISTORY TAB CONTENT[cite: 1] */
                 <div className="space-y-6">
-                  {/* Past Uploaded Documents */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
-                        📁 Uploaded Files History ({uploadedHistory.length})
-                      </h2>
-                    </div>
-                    {uploadedHistory.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">No document upload records found.</p>
-                    ) : (
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                        {uploadedHistory.map((doc) => (
-                          <div key={doc.id} className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs flex flex-col space-y-1">
-                            <div className="flex justify-between items-start">
-                              <span className="font-medium text-slate-200 truncate max-w-[180px]" title={doc.name}>{doc.name}</span>
-                              <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 text-[10px] font-mono border border-cyan-800/50">
-                                {doc.type}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                              <span>{(doc.size / 1024).toFixed(1)} KB</span>
-                              <span>{doc.timestamp}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Past Query / Conversation Log */}
-                  <div>
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">
-                      💬 Query History ({queryHistory.length})
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                      📅 Timeline History
                     </h2>
-                    {queryHistory.length === 0 ? (
-                      <p className="text-xs text-slate-500 italic">No past query history recorded.</p>
-                    ) : (
-                      <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                        {queryHistory.map((item) => (
-                          <div 
-                            key={item.id} 
-                            onClick={() => handleSendMessage(item.query)}
-                            className="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-xs cursor-pointer transition flex flex-col space-y-1 group"
-                          >
-                            <p className="font-medium text-slate-300 group-hover:text-emerald-300 line-clamp-2">
-                              "{item.query}"
-                            </p>
-                            <span className="text-[10px] text-slate-500 font-mono text-right">{item.timestamp}</span>
-                          </div>
-                        ))}
-                      </div>
+                    {(uploadedHistory.length > 0 || queryHistory.length > 0) && (
+                      <button
+                        onClick={clearHistory}
+                        className="text-[10px] py-1 px-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 rounded transition cursor-pointer"
+                      >
+                        Clear All
+                      </button>
                     )}
                   </div>
 
-                  {/* Clear History Button */}
-                  {(uploadedHistory.length > 0 || queryHistory.length > 0) && (
-                    <button
-                      onClick={clearHistory}
-                      className="w-full py-1.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-800/60 rounded text-xs transition cursor-pointer"
-                    >
-                      Clear All Saved History
-                    </button>
+                  {Object.keys(groupedHistory).length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">No matching history records found.</p>
+                  ) : (
+                    <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+                      {Object.entries(groupedHistory).map(([date, items]) => {
+                        const isCollapsed = collapsedDates[date] ?? true;
+
+                        return (
+                          <div key={date} className="space-y-2">
+                            
+                            {/* Accordion Date Header[cite: 1] */}
+                            <button
+                              onClick={() => toggleDateCollapse(date)}
+                              className="w-full flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800 text-xs font-semibold text-slate-300 hover:text-emerald-400 transition cursor-pointer"
+                            >
+                              <span>{date} <span className="text-slate-500 font-normal ml-1">({items.length} items)</span></span>
+                              <span className="text-[10px] text-slate-400">{isCollapsed ? "▶ Expand" : "▼ Collapse"}</span>
+                            </button>
+
+                            {/* Grouped Children Items[cite: 1] */}
+                            {!isCollapsed && (
+                              <div className="space-y-2 pl-1 border-l-2 border-slate-800/50 ml-1">
+                                {items.map((item) => {
+                                  if (item.type === "upload") {
+                                    const doc = item.data as UploadedDocument;
+                                    return (
+                                      <div key={doc.id} className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 text-xs flex flex-col space-y-1 relative group">
+                                        <div className="flex justify-between items-start gap-2">
+                                          <div className="flex items-start gap-2 overflow-hidden w-full">
+                                            <button 
+                                              onClick={() => deleteUploadedDoc(doc.id)}
+                                              className="text-slate-600 hover:text-rose-500 transition-colors shrink-0 mt-0.5"
+                                              title="Delete file history"
+                                            >
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                            <span className="font-medium text-slate-200 truncate" title={doc.name}>📁 {doc.name}</span>
+                                          </div>
+                                          <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 text-[10px] font-mono border border-cyan-800/50 shrink-0">
+                                            {doc.type}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-slate-400 font-mono ml-6">
+                                          <span>{(doc.size / 1024).toFixed(1)} KB</span>
+                                          <span>{doc.timestamp.split(',')[1]?.trim() || doc.timestamp}</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  } else {
+                                    const q = item.data as QueryRecord;
+                                    return (
+                                      <div key={q.id} className="p-2.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-slate-800 text-xs transition flex flex-col space-y-1 relative group">
+                                        <div className="flex items-start gap-2 overflow-hidden w-full">
+                                          <button 
+                                            onClick={(e) => { e.stopPropagation(); deleteQueryRecord(q.id); }}
+                                            className="text-slate-600 hover:text-rose-500 transition-colors shrink-0 mt-0.5 z-10"
+                                            title="Delete query history"
+                                          >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                          <div 
+                                            className="flex-1 cursor-pointer"
+                                            onClick={() => handleSendMessage(q.query)}
+                                          >
+                                            <p className="font-medium text-slate-300 group-hover:text-emerald-300 line-clamp-2">
+                                              💬 "{q.query}"
+                                            </p>
+                                            <div className="text-[10px] text-slate-500 font-mono text-right mt-1">
+                                              {q.timestamp.split(',')[1]?.trim() || q.timestamp}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}
-
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center py-6 space-y-6 text-slate-400">
@@ -531,7 +917,7 @@ export default function MaintenanceAgentDashboard() {
             </div>
           )}
 
-          {/* Footer & Developer Credit */}
+          {/* Footer & Developer Credit[cite: 1] */}
           <div className="p-4 border-t border-slate-800 bg-slate-950/80 text-center">
             {sidebarOpen ? (
               <p className="text-xs text-slate-400 font-medium tracking-wide">
@@ -543,16 +929,16 @@ export default function MaintenanceAgentDashboard() {
           </div>
         </aside>
 
-        {/* Main Interface Workspace */}
+        {/* Main Interface Workspace[cite: 1] */}
         <section className="flex-1 flex flex-col h-full bg-slate-900">
           
-          {/* Header Bar with Profile Badge */}
+          {/* Header Bar with Profile Badge[cite: 1] */}
           <header className="border-b border-slate-800 p-4 bg-slate-950 flex items-center justify-between">
             <h2 className="font-medium text-sm text-slate-300">
               Expert Technical Assistant & Compliance Monitor
             </h2>
 
-            {/* Top-Right Profile Badge */}
+            {/* Top-Right Profile Badge[cite: 1] */}
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-semibold text-slate-200">Eriadura Oloyede</p>
@@ -570,7 +956,7 @@ export default function MaintenanceAgentDashboard() {
           </header>
 
           {/* Message History Feed */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {messages.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-slate-500 text-center">
                 <div className="w-16 h-16 mb-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-2xl">
@@ -585,64 +971,284 @@ export default function MaintenanceAgentDashboard() {
 
             {messages.map((msg, idx) => (
               <div key={idx} className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                <div
-                  className={`max-w-2xl rounded-xl p-4 text-sm leading-relaxed ${
-                    msg.role === "user" 
-                      ? "bg-emerald-600 text-white shadow-md" 
-                      : "bg-slate-950 border border-slate-800 text-slate-200 shadow-lg"
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                
+                {/* Message Outer Wrapper with Group Hover state for Sent Queries */}
+                <div className="relative group max-w-2xl">
+                  
+                  {/* Sent Query Box */}
+                  <div
+                    className={`rounded-xl p-4 text-sm leading-relaxed ${
+                      msg.role === "user" 
+                        ? "bg-emerald-600 text-white shadow-md" 
+                        : "bg-slate-950 border border-slate-800 text-slate-200 shadow-lg"
+                    }`}
+                  >
+                    {/* Inline Editing Mode for Sent Queries */}
+                    {editingMsgIndex === idx ? (
+                      <div className="space-y-2">
+                        <textarea
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-xs text-slate-100 focus:outline-none focus:border-cyan-400"
+                          rows={2}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => setEditingMsgIndex(null)}
+                            className="px-2 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 rounded text-slate-300"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => handleSaveEditQuery(idx)}
+                            className="px-2 py-1 text-[11px] bg-cyan-600 hover:bg-cyan-500 rounded text-white font-medium"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    )}
+                    
+                    {/* Internal Vector Store Sources[cite: 1] */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-700/50">
+                        <p className="text-xs font-semibold text-cyan-400 mb-1.5 uppercase tracking-wider">
+                          📑 Sourced References:
+                        </p>
+                        <ul className="text-xs text-slate-400 space-y-1 ml-4 list-disc">
+                          {msg.sources.map((src, i) => (
+                            <li key={i} className="truncate" title={src}>{src}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="mt-3 pt-2 border-t border-slate-800/80 text-xs text-emerald-400">
-                      <span className="font-semibold">Sources Cited:</span>
-                      <ul className="list-disc list-inside mt-1 space-y-0.5 text-emerald-300/90">
-                        {msg.sources.map((src, sIdx) => (
-                          <li key={sIdx}>{src}</li>
-                        ))}
-                      </ul>
+                    {/* External Search Source Toggle Button & Waving Hand Animation[cite: 1] */}
+                    {msg.externalResults && msg.externalResults.length > 0 && (
+                      <div className="mt-4 pt-3 border-t border-slate-800/80">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleExternalResults(idx)}
+                            className="group relative px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 via-teal-600 to-emerald-600 hover:from-cyan-500 hover:to-emerald-500 text-white font-semibold text-xs shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.7)] transition-all duration-300 flex items-center gap-2 cursor-pointer border border-cyan-300/40"
+                          >
+                            <span>Other Source</span>
+                            <span className="bg-slate-900/50 px-1.5 py-0.5 rounded text-[10px] font-mono text-cyan-200">
+                              {msg.externalEngines?.join(", ")}
+                            </span>
+                          </button>
+
+                          {/* 3D / Animated / VFX Waving Hand[cite: 1] */}
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/40 text-amber-300 text-xs shadow-[0_0_12px_rgba(245,158,11,0.25)]">
+                            <span className="text-lg inline-block animate-[wave_1.2s_infinite] origin-[70%_70%] filter drop-shadow-[0_0_6px_rgba(245,158,11,0.8)]">
+                              👋
+                            </span>
+                            <span className="font-medium text-[11px] tracking-wide text-amber-200">
+                              External details available!
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Expanded External Source Card[cite: 1] */}
+                        {msg.showExternal && (
+                          <div className="mt-3 p-3.5 rounded-xl bg-slate-900/95 border border-cyan-500/40 shadow-[0_0_20px_rgba(6,182,212,0.15)] space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                              <span className="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+                                🌐 External Engines ({msg.externalEngines?.join(", ")}) Results
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">Click link to open in new tab</span>
+                            </div>
+
+                            <div className="space-y-2.5">
+                              {msg.externalResults.map((extItem, eIdx) => (
+                                <div key={eIdx} className="p-2.5 rounded-lg bg-slate-950/80 border border-slate-800/80 hover:border-cyan-500/30 transition">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <a
+                                      href={extItem.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1 truncate"
+                                    >
+                                      <span>🔗 {extItem.title}</span>
+                                      <span className="text-[10px] text-slate-500 font-normal">↗</span>
+                                    </a>
+                                    {extItem.mediaType && (
+                                      <span className="px-1.5 py-0.5 text-[9px] font-mono rounded bg-slate-800 text-cyan-300 uppercase shrink-0">
+                                        {extItem.mediaType}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                                    {extItem.snippet}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Copy & Edit Logo Icons (Appears below the box at the lower right edge on hover) */}
+                  {msg.role === "user" && editingMsgIndex !== idx && (
+                    <div className="absolute -bottom-3.5 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1 bg-slate-950 border border-slate-700/80 text-slate-300 rounded-lg px-2 py-0.5 shadow-lg text-xs z-10">
+                      <button
+                        onClick={() => handleCopyQuery(msg.content, idx)}
+                        className="hover:text-cyan-400 p-0.5 transition"
+                        title="Copy query text"
+                      >
+                        {copiedMsgIndex === idx ? (
+                          <span className="text-emerald-400 font-bold">✓</span>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                        )}
+                      </button>
+                      <div className="w-[1px] h-3 bg-slate-700/80" />
+                      <button
+                        onClick={() => handleStartEditQuery(msg.content, idx)}
+                        className="hover:text-cyan-400 p-0.5 transition"
+                        title="Edit query text"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                      </button>
                     </div>
                   )}
+
                 </div>
               </div>
             ))}
-
+            
             {loading && (
               <div className="flex items-start">
-                <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm text-slate-400 animate-pulse flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  Synthesizing response from vector knowledge base...
+                <div className="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl p-4 text-sm shadow-lg flex items-center space-x-2">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-bounce" />
+                  </div>
+                  <span className="text-emerald-400/80 font-mono text-xs pl-2">Synthesizing compliance data...</span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Chat Input Footer Bar */}
-          <footer className="p-4 bg-slate-950 border-t border-slate-800">
-            <form 
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSendMessage();
-              }} 
-              className="flex gap-3 max-w-4xl mx-auto"
+          {/* Prompt Input Box & Multi-Select "+" Source Menu */}
+          <div className="p-4 bg-slate-950 border-t border-slate-800">
+            <form
+              onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
+              className="max-w-4xl mx-auto flex items-center space-x-2.5 bg-slate-900 border border-slate-800 focus-within:border-emerald-500/50 p-2 rounded-2xl shadow-inner transition-colors relative"
             >
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about compliance rules, error codes, or maintenance workflows..."
-                className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition"
-              />
+              {/* "+" Icon with Multi-Select & Auto-Close Outside Listener */}
+              <div className="relative flex items-center shrink-0" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowSourceDropdown(!showSourceDropdown)}
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg transition cursor-pointer border ${
+                    selectedSearchEngines.length > 0 
+                      ? "bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-[0_0_12px_rgba(6,182,212,0.4)]"
+                      : "bg-slate-800 hover:bg-slate-700 text-slate-300 border-slate-700"
+                  }`}
+                  title="Select External Search Engines (Multi-Select)"
+                >
+                  +
+                </button>
+
+                {/* Selected Engines Chips */}
+                {selectedSearchEngines.length > 0 && (
+                  <div className="ml-2 flex items-center gap-1 max-w-[200px] overflow-x-auto py-0.5">
+                    {selectedSearchEngines.map((engine) => (
+                      <div
+                        key={engine}
+                        className="px-2 py-0.5 rounded-lg bg-cyan-950/90 border border-cyan-500/50 text-cyan-300 text-xs font-medium flex items-center gap-1 shrink-0"
+                      >
+                        <span>{SEARCH_ENGINES.find((e) => e.name === engine)?.icon || "🔍"}</span>
+                        <span>{engine}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleSearchEngine(engine)}
+                          className="text-cyan-400 hover:text-white font-bold ml-1"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Search Source Multi-Selector Popup */}
+                {showSourceDropdown && (
+                  <div className="absolute bottom-12 left-0 w-64 rounded-xl bg-slate-950 border border-cyan-500/40 shadow-[0_0_30px_rgba(0,0,0,0.8)] p-2.5 z-50 space-y-1.5 backdrop-blur-xl">
+                    <div className="flex items-center justify-between px-2 py-1 border-b border-slate-800 mb-1">
+                      <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                        External Search Engines
+                      </span>
+                      <span className="text-[10px] text-cyan-400 font-mono">
+                        {selectedSearchEngines.length} selected
+                      </span>
+                    </div>
+
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {SEARCH_ENGINES.map((engine) => {
+                        const isSelected = selectedSearchEngines.includes(engine.name);
+                        return (
+                          <button
+                            key={engine.id}
+                            type="button"
+                            onClick={() => toggleSearchEngine(engine.name)}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition cursor-pointer ${
+                              isSelected
+                                ? "bg-cyan-600/30 text-cyan-200 border border-cyan-500/50 font-semibold"
+                                : "text-slate-300 hover:bg-slate-900 hover:text-emerald-300"
+                            }`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span>{engine.icon}</span>
+                              <span>{engine.name}</span>
+                            </span>
+                            {isSelected && (
+                              <span className="text-emerald-400 font-bold text-xs">✓</span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Main Query Text Area[cite: 1] */}
+              <textarea
+  value={input}
+  onChange={(e) => setInput(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  }}
+  placeholder="Query system protocols, query compliance rules, or generate maintenance diagnostics..."
+  className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 p-2 focus:outline-none resize-none max-h-32 min-h-[44px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+  rows={1}
+/>
+
+              {/* Submit Button[cite: 1] */}
               <button
                 type="submit"
-                disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-semibold transition cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                disabled={!input.trim() || loading}
+                className="p-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-xl transition shadow-md disabled:shadow-none cursor-pointer shrink-0"
               >
-                Send
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </button>
             </form>
-          </footer>
+          </div>
         </section>
       </main>
     </>
