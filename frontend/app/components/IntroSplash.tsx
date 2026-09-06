@@ -1,3 +1,7 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
 // Futuristic Glassmorphism Intro Splash Component
 function IntroSplash({ onEnter }: { onEnter: () => void }) {
   const [fadeOut, setFadeOut] = useState(false);
@@ -82,3 +86,5 @@ function IntroSplash({ onEnter }: { onEnter: () => void }) {
     </div>
   );
 }
+
+export default IntroSplash;
