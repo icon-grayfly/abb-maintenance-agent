@@ -35,8 +35,10 @@ services:
 
   frontend-dev:
     profiles: ["dev"]
-    build: ./frontend
-    command: npm run dev
+    build:
+      context: ./frontend
+      target: builder
+    command: sh -c "npm install && npm run dev"
     ports:
       - "3100:3100"
     environment:
