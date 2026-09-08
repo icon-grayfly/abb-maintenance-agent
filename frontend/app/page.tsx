@@ -94,7 +94,7 @@ function IntroSplash({ onEnter }: { onEnter: () => void }) {
 
         <div className="intro-panel__copy">
           <p className="intro-kicker">ABB // INDUSTRIAL INTELLIGENCE</p>
-          <h1>Maintenance AI</h1>
+          <h1>ICONOVOUS AI</h1>
           <p>Multimodal diagnostics for safer, smarter operations.</p>
           <button className="intro-enter" onClick={enterDashboard}>
             <span>Initialize system</span>
@@ -567,7 +567,7 @@ export default function MaintenanceAgentDashboard() {
             {sidebarOpen ? (
               <div>
                 <h1 className="text-lg font-bold text-emerald-400 flex items-center gap-2">
-                  ⚡ Maintenance AI
+                  ⚡ ICONOVOUS AI
                 </h1>
                 <p className="text-xs text-slate-400">Industrial RAG Agent</p>
               </div>
